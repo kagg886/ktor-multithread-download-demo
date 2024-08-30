@@ -6,8 +6,6 @@ import io.ktor.utils.io.core.*
 import kotlinx.coroutines.*
 import java.io.File
 import java.security.MessageDigest
-import java.util.concurrent.CompletionException
-import kotlin.coroutines.CoroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.minutes
@@ -62,9 +60,13 @@ class DownloadTest {
 }
 
 suspend fun File.sha256(): String {
-    val messageDigest = MessageDigest.getInstance("SHA-1")
+    val messageDigest = MessageDigest.getInstance("SHA-256")
+    val channel = this.readChannel()
     while (true) {
-        val byt = this.readChannel().readRemaining(1024).readBytes()
+        val byt = channel.readRemaining(1024).use {
+            it.readBytes()
+
+        }
         if (byt.isEmpty()) {
             break
         }

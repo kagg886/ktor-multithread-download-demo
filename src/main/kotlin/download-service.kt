@@ -115,7 +115,9 @@ data class DownloadService(
                         val channel = it.bodyAsChannel()
                         while (true) {
                             //读取最多bufferSize的字节，若无读取内容则返回空数组。此时证明切片下载完毕。
-                            val bytes = channel.readRemaining(bufferSize).readBytes()
+                            val bytes = channel.readRemaining(bufferSize).use {
+                                it.readBytes()
+                            }
                             if (bytes.isEmpty()) {
                                 break
                             }
@@ -166,15 +168,12 @@ data class DownloadService(
             }.call.response.headers
 
             check(response["Accept-Ranges"] == "bytes") {
-                client.close()
                 "$url not support multi-thread download"
             }
             val contentLength = response["Content-Length"]?.toLongOrNull()
             check(contentLength != null && contentLength > 0) {
-                client.close()
                 "Content Length is Null"
             }
-            client.close()
             return DownloadService(
                 url = url,
                 contentLength = contentLength,
